@@ -29,12 +29,13 @@ func (c *Client) connect() {
 func (c *Client) readLine() string {
 	line, err := c.reader.ReadString('\n')
 	if err != nil { panic(err) }
-	println("readLine: ", string(line[0:len(line) - 2]))
+	// println("readLine: ", string(line[0:len(line) - 2]))
 	return line[0:len(line) - 2]
 }
 
-func (c *Client) readOk() {
-	if c.readLine() != "+OK" { panic("not +OK") }
+func (c *Client) readSingle(single string) {
+	line := c.readLine()
+	if line[0] != '+' || line[1:] != single { panic("not +" + single) }
 }
 
 func atoi(s string) int {
@@ -74,14 +75,17 @@ func (c *Client) readMultiBulk() [][]byte {
 }
 
 func (c *Client) write(cmd string, args []string) {
-	// NOTE avoid recreation of bytes.Buffer ? avoid using sprintf ?
 	b := bytes.NewBufferString(fmt.Sprintf("*%d\r\n$%d\r\n%s\r\n", len(args) + 1, len(cmd), cmd))
 	for _, arg := range args {
 		b.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(arg), arg))
 	}
-	println("write:", string(b.Bytes()))
+
+	// println("write:", string(c.buffer.Bytes()))
+
+	// buffer.WriteTo(c.conn)
 
 	if c.conn == nil { c.connect() }
+
 	c.conn.Write(b.Bytes())
 }
 
@@ -101,10 +105,6 @@ func (c *Client) writeRead(cmd string, args []string, read func()) {
 	read()
 }
 
-func (c *Client) writeReadOk(cmd string, args ...string) {
-	c.writeRead(cmd, args, func() { c.readOk() })
-}
-
 func (c *Client) writeReadInt(cmd string, args ...string) (r int) {
 	c.writeRead(cmd, args, func() { r = c.readInt() })
 	return
@@ -118,5 +118,9 @@ func (c *Client) writeReadBulk(cmd string, args ...string) (r []byte) {
 func (c *Client) writeReadMultiBulk(cmd string, args ...string) (r [][]byte) {
 	c.writeRead(cmd, args, func() { r = c.readMultiBulk() })
 	return
+}
+
+func (c *Client) writeReadSingle(cmd string, single string, args ...string) {
+	c.writeRead(cmd, args, func() { c.readSingle(single) })
 }
 

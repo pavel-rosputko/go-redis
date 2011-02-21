@@ -6,7 +6,8 @@ GOFILES= \
 	client.go \
 	keys.go \
 	strings.go \
-	hashes.go
+	hashes.go \
+	commands.go
 	
 include $(GOROOT)/src/Make.pkg
 

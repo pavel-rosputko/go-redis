@@ -38,3 +38,9 @@ func TestAppend(t *testing.T) {
 	res := client.Get(key)
 	if string(res) != (value + value) { t.Fatal("") }
 }
+
+func BenchmarkStrings(bm *testing.B) {
+	for i := 0; i < bm.N; i++ {
+		client.Set("key", "value")
+	}
+}
